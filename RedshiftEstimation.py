@@ -3,9 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import find_peaks
 from scipy.interpolate import interp1d
-import os
-
-script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Galaxies given by Connor
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00002332_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00002332_clear-prism_v1.0_x1d.fits"
