@@ -12,10 +12,11 @@ from scipy.interpolate import interp1d
 
 # Comparison with Bunker et al. 2024
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-10058975_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-10058975_clear-prism_v1.0_x1d.fits" # z = 9.433 (matching peaks causes an error here)
-fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00021842_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00021842_clear-prism_v1.0_x1d.fits" # z = 7.981
+#fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00021842_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00021842_clear-prism_v1.0_x1d.fits" # z = 7.981
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00018846_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00018846_clear-prism_v1.0_x1d.fits" # z = 6.336 (big spike at the beggining causes an error)
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00022251_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00022251_clear-prism_v1.0_x1d.fits" # z = 5.800
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00018090_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00018090_clear-prism_v1.0_x1d.fits" # z = 4.776
+fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00003892_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00003892_clear-prism_v1.0_x1d.fits" # z = 2.227
 
 # Open the FITS file and read data
 with fits.open(fitsFile) as spec:
@@ -49,16 +50,59 @@ emission_lines = {
     'OIII_4959': 4959,
     'OIII_5007': 5007,
     'H_alpha': 6563,
-    #'Lyman_alpha': 1216,
 }
 
 # Redshifts that will be checked 
-z_min, z_max, z_step = 0, 10, 0.001
+z_min, z_max, z_step = 0, 15, 0.0001
 redshifts = np.arange(z_min, z_max, z_step)
+
+lyman_break_wavelength = 1215
+best_lyman_z = 0
+best_lyman_ratio = 0
+
+# Initial redshift estimation using lyman break
+for z in redshifts:
+    redshifted_lyman_break = lyman_break_wavelength * (1 + z)
+
+    # Window that will be checked 
+    short_wavelength_range = (redshifted_lyman_break - 200, redshifted_lyman_break)
+    long_wavelength_range = (redshifted_lyman_break, redshifted_lyman_break + 200)
+
+    # Average flux on the left side of redshifted lyman break
+    short_flux_indices = (wavelength_angstrom > short_wavelength_range[0]) & \
+                         (wavelength_angstrom <= short_wavelength_range[1])
+    short_flux = flux[short_flux_indices]
+    short_flux = short_flux[short_flux > 0]
+    avg_short_flux = np.mean(short_flux) if len(short_flux) > 0 else 0
+
+    # Average flux on the right side of redshifted lyman break
+    long_flux_indices = (wavelength_angstrom > long_wavelength_range[0]) & \
+                        (wavelength_angstrom <= long_wavelength_range[1])
+    long_flux = flux[long_flux_indices]
+    long_flux = long_flux[long_flux > 0]
+    avg_long_flux = np.mean(long_flux) if len(long_flux) > 0 else 0
+
+    # Calculate the flux ratio if denominator is non-zero
+    if avg_short_flux > 0:
+        flux_ratio = avg_long_flux / avg_short_flux
+        if flux_ratio > best_lyman_ratio:
+            best_lyman_ratio = flux_ratio
+            best_lyman_z = z
+
+print(f"Best Lyman break redshift: {best_lyman_z}")
+print(f"Best Lyman break flux ratio: {best_lyman_ratio}")
+
+if best_lyman_ratio < 3:
+    best_lyman_z = 0
+else:
+    best_lyman_z -= 1
+
+redshifts = np.arange(best_lyman_z, z_max, z_step)
 
 best_redshift = 0
 best_score = 0
-tolerance = 600
+final_peak_count = 0
+tolerance = 20
 
 # Parameters for peak detection
 threshold = 0.1  # Minimum height for normalized flux
@@ -105,15 +149,15 @@ for z in redshifts:
             if  distance < tolerance:
                 # Calculate the score using the flux at the observed wavelength
                 score += observed_flux
-                matching_peak_count += 1
+                #matching_peak_count += 1
                 
                 # Tracking the contributions
                 current_line_contributions[line_name] += observed_flux
                 current_line_peak_counts[line_name] += 1
-    
+
     # Make sure that a lot of small peaks close to the observed wavelenghts don't skew the result
-    if matching_peak_count > 0:
-        score /= matching_peak_count
+    # if matching_peak_count > 0:
+    #     score /= matching_peak_count
         
     # Normalize each emission line's contribution for debugging
     for line_name in current_line_contributions:
@@ -125,10 +169,12 @@ for z in redshifts:
         best_score = score
         best_redshift = z
         best_line_contributions = current_line_contributions.copy() 
+        #final_peak_count = matching_peak_count
 
 if best_redshift != 0:
     print(f"Score: {best_score}")
     print(f"Best Redshift: {best_redshift}")
+    print(f"Matching peaks: {final_peak_count}")
     for line_name, contribution in best_line_contributions.items():
         print(f"{line_name}: {contribution}")
 
