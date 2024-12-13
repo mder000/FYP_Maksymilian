@@ -2,6 +2,7 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import numpy as np
+from numpy.polynomial.polynomial import Polynomial
 from scipy.signal import find_peaks
 from scipy.interpolate import interp1d
 
@@ -40,17 +41,19 @@ wavelength_angstrom = wavelength_angstrom[valid_indices]
 # print(f"Length of wavelength: {len(wavelength_angstrom)}")
 # print(f"Length of flux: {len(flux)}")
 
-# Normalise flux, so that very big peaks don't skew the result
+# Normalise flux to range in values 0 to 1
 flux_min = np.min(flux)
 flux_max = np.max(flux)
 normalized_flux = (flux - flux_min) / (flux_max - flux_min)
 
 # Define rest-frame wavelengths of key emission lines (in Å)
 emission_lines = {
+    'OII_3727': 3727,
     'H_beta' : 4861,
     'OIII_4959': 4959,
     'OIII_5007': 5007,
     'H_alpha': 6563,
+    'SIII': 9531
 }
 
 # Redshifts that will be checked 
@@ -116,14 +119,22 @@ peaks, properties = find_peaks(
     prominence=prominence, 
 )
 
-peak_wavelengths = wavelength_angstrom[peaks]
-peak_flux_values = normalized_flux[peaks]
+# peak_wavelengths = wavelength_angstrom[peaks]
+# peak_flux_values = normalized_flux[peaks]
 
 # print("Wavelengths at peaks:", peak_wavelengths)
 # print("Flux values at peaks:", peak_flux_values)
 
+#Fit a high-order polynomial and normalise the flux
+p = Polynomial.fit(wavelength_angstrom, flux, deg=10)
+baseline = p(wavelength_angstrom)
+flux_baseline_corrected = flux - baseline
+flux_min = np.min(flux_baseline_corrected)
+flux_max = np.max(flux_baseline_corrected)
+normalized_corrected_flux = (flux_baseline_corrected - flux_min) / (flux_max - flux_min)
+
 # Interpolator, used to find flux at observer wavelegths
-flux_interpolator = interp1d(wavelength_angstrom, normalized_flux, bounds_error=False, fill_value=0)
+flux_interpolator = interp1d(wavelength_angstrom, normalized_corrected_flux, bounds_error=False, fill_value=0)
 
 # Dictionary to track how each emition line contributes to the final score
 best_line_contributions = {line_name: 0 for line_name in emission_lines.keys()}
@@ -182,6 +193,7 @@ if best_redshift != 0:
     # Plot the spectrum with identified peaks
     plt.figure(figsize=(10, 6))
     plt.plot(wavelength_angstrom, flux, lw=1, color='black', label="Observed Flux")
+    plt.plot(wavelength_angstrom, flux_baseline_corrected, lw=1, color='grey', alpha=0.5, label="Flux with Baseline (Polynomial Fit)")
     plt.scatter(wavelength_angstrom[peaks], flux[peaks], color='blue', label="Detected Peaks")
     plt.xlabel('Wavelength (Å)', fontsize=14)
     plt.ylabel('Flux (erg/s/cm$^{2}$/Å)', fontsize=14)
@@ -194,12 +206,17 @@ if best_redshift != 0:
     # Display redshifted emission lines with labels
     for line_name, rest_wavelength in emission_lines.items():
         observed_wavelength = rest_wavelength * (1 + best_redshift)
-        plt.axvline(observed_wavelength, color='red', linestyle='--', alpha=0.8, label="_nolegend_")
-        plt.text(observed_wavelength + 50, max(flux) * 1.05, line_name, 
-                rotation=90, verticalalignment='bottom', fontsize=8, color='black')
-        
-        # Display rest-frame lines
-        plt.axvline(rest_wavelength, color='green', linestyle='--', alpha=0.8, label="_nolegend_")
+        if observed_wavelength <= np.max(wavelength_angstrom):
+            plt.axvline(observed_wavelength, color='red', linestyle='--', alpha=0.8, label="_nolegend_")
+            plt.text(observed_wavelength + 50, max(flux) * 1.05, line_name, 
+                    rotation=90, verticalalignment='bottom', fontsize=8, color='black')
+            
+            # Display rest-frame lines
+            plt.axvline(rest_wavelength, color='green', linestyle='--', alpha=0.8, label="_nolegend_")
+            
+    #Extend the grid on the left to make sure all of the rest-frame lines are visible
+    current_xlim = plt.xlim()
+    plt.xlim(current_xlim[0] - (current_xlim[1] - current_xlim[0]) * 0.05, current_xlim[1])
 
     # Add custom legend entries for redshifted and rest-frame lines
     custom_legend = [
