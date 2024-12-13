@@ -1,5 +1,6 @@
 from astropy.io import fits
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 from scipy.signal import find_peaks
 from scipy.interpolate import interp1d
@@ -11,12 +12,12 @@ from scipy.interpolate import interp1d
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00017566_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00017566_clear-prism_v1.0_x1d.fits"
 
 # Comparison with Bunker et al. 2024
-#fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-10058975_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-10058975_clear-prism_v1.0_x1d.fits" # z = 9.433 (matching peaks causes an error here)
+#fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-10058975_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-10058975_clear-prism_v1.0_x1d.fits" # z = 9.433
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00021842_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00021842_clear-prism_v1.0_x1d.fits" # z = 7.981
-#fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00018846_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00018846_clear-prism_v1.0_x1d.fits" # z = 6.336 (big spike at the beggining causes an error)
+#fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00018846_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00018846_clear-prism_v1.0_x1d.fits" # z = 6.336
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00022251_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00022251_clear-prism_v1.0_x1d.fits" # z = 5.800
-#fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00018090_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00018090_clear-prism_v1.0_x1d.fits" # z = 4.776
-fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00003892_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00003892_clear-prism_v1.0_x1d.fits" # z = 2.227
+fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00018090_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00018090_clear-prism_v1.0_x1d.fits" # z = 4.776
+#fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00003892_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00003892_clear-prism_v1.0_x1d.fits" # z = 2.227
 
 # Open the FITS file and read data
 with fits.open(fitsFile) as spec:
@@ -151,7 +152,7 @@ for z in redshifts:
                 score += observed_flux
                 #matching_peak_count += 1
                 
-                # Tracking the contributions
+                # Track the contributions
                 current_line_contributions[line_name] += observed_flux
                 current_line_peak_counts[line_name] += 1
 
@@ -180,18 +181,34 @@ if best_redshift != 0:
 
     # Plot the spectrum with identified peaks
     plt.figure(figsize=(10, 6))
-    plt.plot(wavelength_angstrom, flux, lw=1, color='black')
-    plt.scatter(wavelength_angstrom[peaks], flux[peaks], color='red')
+    plt.plot(wavelength_angstrom, flux, lw=1, color='black', label="Observed Flux")
+    plt.scatter(wavelength_angstrom[peaks], flux[peaks], color='blue', label="Detected Peaks")
     plt.xlabel('Wavelength (Å)', fontsize=14)
     plt.ylabel('Flux (erg/s/cm$^{2}$/Å)', fontsize=14)
     plt.title('1D Spectrum', fontsize=16)
 
-    # Overlay vertical lines for the best redshifted emission lines
+    # Make the grid higher, to show the emssion lines above the plot
+    current_ylim = plt.ylim()
+    plt.ylim(current_ylim[0], max(flux) * 1.2)  
+
+    # Display redshifted emission lines with labels
     for line_name, rest_wavelength in emission_lines.items():
         observed_wavelength = rest_wavelength * (1 + best_redshift)
-        plt.axvline(observed_wavelength, color='grey', linestyle='--', label=f'{line_name}', alpha=0.8)
+        plt.axvline(observed_wavelength, color='red', linestyle='--', alpha=0.8, label="_nolegend_")
+        plt.text(observed_wavelength + 50, max(flux) * 1.05, line_name, 
+                rotation=90, verticalalignment='bottom', fontsize=8, color='black')
+        
+        # Display rest-frame lines
+        plt.axvline(rest_wavelength, color='green', linestyle='--', alpha=0.8, label="_nolegend_")
 
-    plt.legend(title=f'Redshift: {best_redshift:.3f}')
+    # Add custom legend entries for redshifted and rest-frame lines
+    custom_legend = [
+        Line2D([0], [0], color='red', linestyle='--', label='Redshifted Emission Lines'),
+        Line2D([0], [0], color='green', linestyle='--', label='Rest-Frame Emission Lines'),
+    ]
+    plt.legend(handles=custom_legend + plt.gca().get_legend_handles_labels()[0],
+               title=f'Redshift: {best_redshift:.3f}', title_fontproperties={'weight': 'bold'})
+    
     plt.grid(True)
     plt.show()
 else:
