@@ -17,8 +17,13 @@ from scipy.interpolate import interp1d
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00021842_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00021842_clear-prism_v1.0_x1d.fits" # z = 7.981
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00018846_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00018846_clear-prism_v1.0_x1d.fits" # z = 6.336
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00022251_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00022251_clear-prism_v1.0_x1d.fits" # z = 5.800
-fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00018090_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00018090_clear-prism_v1.0_x1d.fits" # z = 4.776
+#fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00018090_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00018090_clear-prism_v1.0_x1d.fits" # z = 4.776
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00003892_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00003892_clear-prism_v1.0_x1d.fits" # z = 2.227
+
+# Spectra used in testing 
+fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00000606_clear-prism_v1.0_x1d.fits" # z = 3.971
+#fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00000634_clear-prism_v1.0_x1d.fits" # z = 3.976
+#fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00003462_clear-prism_v1.0_x1d.fits" # z = 0.829
 
 # Open the FITS file and read data
 with fits.open(fitsFile) as spec:
@@ -60,48 +65,47 @@ emission_lines = {
 z_min, z_max, z_step = 0, 15, 0.0001
 redshifts = np.arange(z_min, z_max, z_step)
 
-lyman_break_wavelength = 1215
-best_lyman_z = 0
-best_lyman_ratio = 0
+# # Initial redshift estimation using lyman break
+# lyman_break_wavelength = 1215
+# best_lyman_z = 0
+# best_lyman_ratio = 0
+# for z in redshifts:
+#     redshifted_lyman_break = lyman_break_wavelength * (1 + z)
 
-# Initial redshift estimation using lyman break
-for z in redshifts:
-    redshifted_lyman_break = lyman_break_wavelength * (1 + z)
+#     # Window that will be checked 
+#     short_wavelength_range = (redshifted_lyman_break - 200, redshifted_lyman_break)
+#     long_wavelength_range = (redshifted_lyman_break, redshifted_lyman_break + 200)
 
-    # Window that will be checked 
-    short_wavelength_range = (redshifted_lyman_break - 200, redshifted_lyman_break)
-    long_wavelength_range = (redshifted_lyman_break, redshifted_lyman_break + 200)
+#     # Average flux on the left side of redshifted lyman break
+#     short_flux_indices = (wavelength_angstrom > short_wavelength_range[0]) & \
+#                          (wavelength_angstrom <= short_wavelength_range[1])
+#     short_flux = flux[short_flux_indices]
+#     short_flux = short_flux[short_flux > 0]
+#     avg_short_flux = np.mean(short_flux) if len(short_flux) > 0 else 0
 
-    # Average flux on the left side of redshifted lyman break
-    short_flux_indices = (wavelength_angstrom > short_wavelength_range[0]) & \
-                         (wavelength_angstrom <= short_wavelength_range[1])
-    short_flux = flux[short_flux_indices]
-    short_flux = short_flux[short_flux > 0]
-    avg_short_flux = np.mean(short_flux) if len(short_flux) > 0 else 0
+#     # Average flux on the right side of redshifted lyman break
+#     long_flux_indices = (wavelength_angstrom > long_wavelength_range[0]) & \
+#                         (wavelength_angstrom <= long_wavelength_range[1])
+#     long_flux = flux[long_flux_indices]
+#     long_flux = long_flux[long_flux > 0]
+#     avg_long_flux = np.mean(long_flux) if len(long_flux) > 0 else 0
 
-    # Average flux on the right side of redshifted lyman break
-    long_flux_indices = (wavelength_angstrom > long_wavelength_range[0]) & \
-                        (wavelength_angstrom <= long_wavelength_range[1])
-    long_flux = flux[long_flux_indices]
-    long_flux = long_flux[long_flux > 0]
-    avg_long_flux = np.mean(long_flux) if len(long_flux) > 0 else 0
+#     # Calculate the flux ratio if denominator is non-zero
+#     if avg_short_flux > 0:
+#         flux_ratio = avg_long_flux / avg_short_flux
+#         if flux_ratio > best_lyman_ratio:
+#             best_lyman_ratio = flux_ratio
+#             best_lyman_z = z
 
-    # Calculate the flux ratio if denominator is non-zero
-    if avg_short_flux > 0:
-        flux_ratio = avg_long_flux / avg_short_flux
-        if flux_ratio > best_lyman_ratio:
-            best_lyman_ratio = flux_ratio
-            best_lyman_z = z
+# print(f"Best Lyman break redshift: {best_lyman_z}")
+# print(f"Best Lyman break flux ratio: {best_lyman_ratio}")
 
-print(f"Best Lyman break redshift: {best_lyman_z}")
-print(f"Best Lyman break flux ratio: {best_lyman_ratio}")
+# if best_lyman_ratio < 3:
+#     best_lyman_z = 0
+# else:
+#     best_lyman_z -= 1
 
-if best_lyman_ratio < 3:
-    best_lyman_z = 0
-else:
-    best_lyman_z -= 1
-
-redshifts = np.arange(best_lyman_z, z_max, z_step)
+# redshifts = np.arange(best_lyman_z, z_max, z_step)
 
 best_redshift = 0
 best_score = 0
@@ -109,8 +113,8 @@ final_peak_count = 0
 tolerance = 20
 
 # Parameters for peak detection
-threshold = 0.1  # Minimum height for normalized flux
-prominence = 0.02  # Minimum prominence for peaks
+threshold = 0.2  # Minimum height for normalized flux
+prominence = 0.04  # Minimum prominence for peaks
 
 # Detect peaks in the normalized flux (used for estimation)
 peaks, properties = find_peaks(
@@ -126,7 +130,7 @@ peaks, properties = find_peaks(
 # print("Flux values at peaks:", peak_flux_values)
 
 #Fit a high-order polynomial and normalise the flux
-p = Polynomial.fit(wavelength_angstrom, flux, deg=10)
+p = Polynomial.fit(wavelength_angstrom, flux, deg=7)
 baseline = p(wavelength_angstrom)
 flux_baseline_corrected = flux - baseline
 flux_min = np.min(flux_baseline_corrected)
@@ -138,6 +142,8 @@ flux_interpolator = interp1d(wavelength_angstrom, normalized_corrected_flux, bou
 
 # Dictionary to track how each emition line contributes to the final score
 best_line_contributions = {line_name: 0 for line_name in emission_lines.keys()}
+
+cutoff_wavelength = 8000
 
 for z in redshifts:
     score = 0
@@ -153,6 +159,10 @@ for z in redshifts:
         
         # Interpolate the flux at the observed wavelength
         observed_flux = flux_interpolator(observed_wavelength)
+        
+        #weight = np.sqrt(observed_wavelength / cutoff_wavelength)
+        weight = np.log1p(observed_wavelength / cutoff_wavelength) / 2 + 0.5
+        #weight = (np.log1p(observed_wavelength) / np.sqrt(cutoff_wavelength)) + 1
 
         # Check for peaks near the observed wavelength
         for peak in peaks:
@@ -160,7 +170,7 @@ for z in redshifts:
             distance = np.abs(wavelength_angstrom[peak] - observed_wavelength)
             if  distance < tolerance:
                 # Calculate the score using the flux at the observed wavelength
-                score += observed_flux
+                score += observed_flux * weight
                 #matching_peak_count += 1
                 
                 # Track the contributions
@@ -186,9 +196,9 @@ for z in redshifts:
 if best_redshift != 0:
     print(f"Score: {best_score}")
     print(f"Best Redshift: {best_redshift}")
-    print(f"Matching peaks: {final_peak_count}")
-    for line_name, contribution in best_line_contributions.items():
-        print(f"{line_name}: {contribution}")
+    # print(f"Matching peaks: {final_peak_count}")
+    # for line_name, contribution in best_line_contributions.items():
+    #     print(f"{line_name}: {contribution}")
 
     # Plot the spectrum with identified peaks
     plt.figure(figsize=(10, 6))
