@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 import os
 
-#fitsFile = "Testing_spectra/jades_dr3_prism_public_gn_v1.1.fits"
-fitsFile = "Testing_spectra/jades_dr3_prism_public_gs_v1.1.fits"
-output_excel = "Data/Extracted_observations.xlsx"
+fitsFile = "Testing_spectra/jades_dr3_prism_public_gn_v1.1.fits"
+#fitsFile = "Testing_spectra/jades_dr3_prism_public_gs_v1.1.fits"
+output_excel = "Data/Extracted_observations_FlagA.xlsx"
 
 with fits.open(fitsFile) as spec:
     spec.info()
