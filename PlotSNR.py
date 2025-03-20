@@ -13,8 +13,10 @@ import numpy as np
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00021842_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00021842_clear-prism_v1.0_x1d.fits" # z = 7.981
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00018846_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00018846_clear-prism_v1.0_x1d.fits" # z = 6.336
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00022251_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00022251_clear-prism_v1.0_x1d.fits" # z = 5.800
-fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00018090_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00018090_clear-prism_v1.0_x1d.fits" # z = 4.776
+#fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00018090_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00018090_clear-prism_v1.0_x1d.fits" # z = 4.776
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00003892_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00003892_clear-prism_v1.0_x1d.fits" # z = 2.227
+
+fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00000930_clear-prism_v1.0_x1d.fits" # z = 4.062
 
 
 with fits.open(fitsFile) as spec:
@@ -23,19 +25,23 @@ with fits.open(fitsFile) as spec:
     data = spec[1].data
     print(spec[1].columns)
     
-    wavelength = data['WAVELENGTH'] 
+    # Extract columns
+    wavelength = data['WAVELENGTH']  
     flux = data['FLUX']  
+    flux_err = data['FLUX_ERR'] 
     
-wavelength = wavelength * 1e4
-print(np.min(wavelength))
-print(np.max(wavelength))
+    wavelength_angstrom = wavelength * 1e4
 
-plt.figure(figsize=(10, 6))
-plt.plot(wavelength, flux, label='Flux', lw=1, color='black')
-plt.xlabel('Wavelength (Å)', fontsize=14)
-plt.ylabel('Flux (erg/s/cm$^{2}$/Å)', fontsize=14)
-plt.title('1D Spectrum', fontsize=16)
-plt.legend()
-plt.grid(True)
-plt.show()
+    snr = flux / flux_err  
+
+    median_snr = np.nanmedian(snr)
+    print(f"Median SNR: {median_snr:.2f}")
+
+    plt.figure(figsize=(8, 4))
+    plt.plot(wavelength_angstrom, snr, label="SNR Spectrum", color="blue", lw=1)
+    plt.xlabel("Wavelength")
+    plt.ylabel("SNR")
+    plt.title("Signal-to-Noise Ratio Across Wavelengths")
+    plt.legend()
+    plt.show()
     
