@@ -11,7 +11,7 @@ import re
 
 observationsFolder = "Testing_spectra/1D"
 input_excel = "Data/Extracted_observations.xlsx"
-output_excel = "Data/Redshift_comparison_v3.xlsx"
+output_excel = "Data/Redshift_comparison_v4.xlsx"
 
 df = pd.read_excel(input_excel, dtype={'NIRSpec_ID': str})  # Ensure NIRSpec_ID is treated as a string
 fits_files = sorted(os.listdir(observationsFolder))
@@ -87,7 +87,7 @@ for fits_file in fits_files:
                 best_redshift = 0
                 best_score = 0
                 final_peak_count = 0
-                tolerance = 100
+                tolerance = 200
 
                 # Parameters for peak detection
                 threshold = 0.2  # Minimum height for normalized flux

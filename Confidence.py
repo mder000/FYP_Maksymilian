@@ -22,13 +22,17 @@ import re
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00018090_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00018090_clear-prism_v1.0_x1d.fits" # z = 4.776
 #fitsFile = "hlsp/hlsp_jades_jwst_nirspec_goods-s-deephst-00003892_clear-prism_v1.0/hlsp_jades_jwst_nirspec_goods-s-deephst-00003892_clear-prism_v1.0_x1d.fits" # z = 2.227
 
-# Spectra used in testing 
+# Bad
 #fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00000755_clear-prism_v1.0_x1d.fits" # z = 3.476
-#fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00000930_clear-prism_v1.0_x1d.fits" # z = 4.062
+fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00000930_clear-prism_v1.0_x1d.fits" # z = 4.062
 #fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00000998_clear-prism_v1.0_x1d.fits" # z = 4.422
-fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumjwst-00045170_clear-prism_v1.0_x1d.fits" # z = 8.368
+#fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumjwst-00045170_clear-prism_v1.0_x1d.fits" # z = 8.368
 #fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumjwst-00055757_clear-prism_v1.0_x1d.fits" # z = 9.746
 #fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00002389_clear-prism_v1.0_x1d.fits" # z = 7.043
+
+
+# Good
+#fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00000604_clear-prism_v1.0_x1d.fits" 
 
 observationsFolder = "Testing_spectra/1D"
 input_excel = "Data/Extracted_observations.xlsx"
@@ -125,6 +129,9 @@ with fits.open(fitsFile) as spec:
 
                 
                 snr_window_size = 5000
+                
+                # Initialize a list to store redshift candidates and their scores and matching counts
+                redshift_candidates = []
 
                 for z in redshifts:
                     score = 0
@@ -158,19 +165,48 @@ with fits.open(fitsFile) as spec:
                                     
                                     # Calculate the score using the flux at the observed wavelength
                                     score += observed_flux * snr_weight
-                                    #matching_peak_count += 1
+                                    matching_peak_count += 1
                                     
 
                     # Make sure that a lot of small peaks close to the observed wavelenghts don't skew the result
                     # if matching_peak_count > 0:
                     #     score /= matching_peak_count
+                    
+                    redshift_candidates.append({
+                        "redshift": z,
+                        "score": score,
+                        "matching_peaks": matching_peak_count
+                    })
                         
-
                     # Update best redshift if score is higher
                     if score > best_score:
                         best_score = score
                         best_redshift = z
                         #final_peak_count = matching_peak_count
+                        
+                # Determine best candidate
+                redshift_candidates.sort(key=lambda x: x["score"], reverse=True)
+                best_candidate = redshift_candidates[0]
+                
+                print(f"Matching peaks: {best_candidate}")
+                
+                for line_name, rest_wavelength in emission_lines.items():
+                    # Calculate predicted wavelength at best redshift
+                    predicted_wavelength = rest_wavelength * (1 + best_redshift)
+                    
+                    # Only check lines that fall within the observed range
+                    if predicted_wavelength < np.min(wavelength_angstrom) or predicted_wavelength > np.max(wavelength_angstrom):
+                        continue
+                    
+                    # Define a window around the predicted wavelength for local noise estimation
+                    window_indices = np.abs(wavelength_angstrom - predicted_wavelength) < snr_window_size
+                    local_noise = np.std(normalized_flux[window_indices])
+                    
+                    # Obtain the observed flux using the SNR interpolator (based on normalized flux)
+                    observed_flux = flux_interpolator_snr(predicted_wavelength)
+                    snr_line = observed_flux / (local_noise + 1e-6)
+                    
+                    print(f"{line_name}: Predicted λ = {predicted_wavelength:.1f} Å, SNR = {snr_line:.2f}")
 
                 if best_redshift != 0:
                     print(f"Score: {best_score}")
