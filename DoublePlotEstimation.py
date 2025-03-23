@@ -195,30 +195,19 @@ with fits.open(fitsFile) as spec:
                     with fits.open(fitsFile_2d) as hdul:
                         flux2d     = hdul[1].data  
                         flux_err2d = hdul[2].data  
-                    
+
                     # Compute the inverse variance and signal-to-noise image
                     ivar2d = 1.0 / (flux_err2d**2)  
                     signal_to_noise = flux2d * np.sqrt(ivar2d)
                     signal_to_noise[~np.isfinite(signal_to_noise)] = 0
                     
-                    min_wave = wavelength_angstrom.min()
-                    max_wave = wavelength_angstrom.max()
-                    
-                    rows, cols = flux2d.shape
-                    
                     # Plot the 2D spectrum 
                     im = ax_top.imshow(signal_to_noise, origin='lower', interpolation='nearest',
-                                    vmin=0.01, vmax=4, aspect="auto", cmap="inferno", extent=(min_wave, max_wave, 0, rows))
+                                    vmin=0.01, vmax=4, aspect="auto", cmap="inferno")
 
                     ax_top.set_title("2D Spectrum Signal-to-Noise", fontsize=12)
-                    ax_top.set_xlim(min_wave, max_wave)
-                    ax_top.set_xlabel("Wavelength (Å)")
+                    ax_top.set_xlabel("X Pixel", fontsize=10)
                     ax_top.set_ylabel("Y Pixel", fontsize=10)
-                    cbar_ax = fig.add_axes([0.125, 0.93, 0.75, 0.02])  # Adjust these values as needed
-                    cbar = fig.colorbar(im, cax=cbar_ax, orientation='horizontal')
-                    cbar.set_label('S/N')
-                    cbar.ax.xaxis.set_label_position('top')
-                    cbar.ax.xaxis.tick_top()
                     
                     # Bottom subplot for 1D spectrum
                     ax_bottom = fig.add_subplot(2, 1, 2)
@@ -266,7 +255,7 @@ with fits.open(fitsFile) as spec:
 
                     ax_bottom.grid(True)
                     
-                    plt.tight_layout(rect=[0, 0, 1, 0.9])
+                    plt.tight_layout()
                     plt.show()
                 else:
                     print("Redshift could not be detected")
