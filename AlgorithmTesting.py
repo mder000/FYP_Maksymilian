@@ -11,7 +11,7 @@ import re
 
 observationsFolder = "Testing_spectra/1D"
 input_excel = "Data/Extracted_observations.xlsx"
-output_excel = "Data/Redshift_comparison_v4.xlsx"
+output_excel = "Data/Redshift_comparison_v5.xlsx"
 
 df = pd.read_excel(input_excel, dtype={'NIRSpec_ID': str})  # Ensure NIRSpec_ID is treated as a string
 fits_files = sorted(os.listdir(observationsFolder))
@@ -40,9 +40,14 @@ for fits_file in fits_files:
                     data = spec[1].data
                     wavelength = data['wavelength']
                     flux = data['flux']
+                    flux_err = data['FLUX_ERR'] 
 
                 # print(f"Length of wavelength: {len(wavelength)}")
                 # print(f"Length of flux: {len(flux)}")
+                
+                #SNR calculation
+                snr = flux / flux_err  
+                median_snr = np.nanmedian(snr)
 
                 # Convert wavelength to Angstrom
                 wavelength_angstrom = wavelength * 1e4
@@ -51,6 +56,7 @@ for fits_file in fits_files:
                 valid_indices = ~np.isnan(flux)  
                 flux = flux[valid_indices]     
                 wavelength_angstrom = wavelength_angstrom[valid_indices] 
+                flux_err = flux_err[valid_indices]
 
                 # print(f"Length of wavelength: {len(wavelength_angstrom)}")
                 # print(f"Length of flux: {len(flux)}")
@@ -81,13 +87,13 @@ for fits_file in fits_files:
                 }
 
                 # Redshifts that will be checked 
-                z_min, z_max, z_step = 2, 11, 0.001
+                z_min, z_max, z_step = 2, 15, 0.001
                 redshifts = np.arange(z_min, z_max, z_step)
 
                 best_redshift = 0
                 best_score = 0
                 final_peak_count = 0
-                tolerance = 200
+                tolerance = 100
 
                 # Parameters for peak detection
                 threshold = 0.2  # Minimum height for normalized flux
@@ -174,7 +180,8 @@ for fits_file in fits_files:
                     "Filename": fits_file,
                     "Estimated Redshift": best_redshift,
                     "Catalog Redshift": z_spec,
-                    "Catalog Spec Flag": z_spec_flag
+                    "Catalog Spec Flag": z_spec_flag,
+                    "SNR" : median_snr
                 })
                 
 df_results = pd.DataFrame(results)
