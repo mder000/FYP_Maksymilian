@@ -26,9 +26,11 @@ import re
 #fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00000755_clear-prism_v1.0_x1d.fits" # z = 3.476
 #fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00000930_clear-prism_v1.0_x1d.fits" # z = 4.062
 #fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00000998_clear-prism_v1.0_x1d.fits" # z = 4.422
-fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumjwst-00045170_clear-prism_v1.0_x1d.fits" # z = 8.368
+#fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumjwst-00045170_clear-prism_v1.0_x1d.fits" # z = 8.368
 #fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumjwst-00055757_clear-prism_v1.0_x1d.fits" # z = 9.746
 #fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00002389_clear-prism_v1.0_x1d.fits" # z = 7.043
+
+fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00000604_clear-prism_v1.0_x1d.fits"
 
 observationsFolder = "Testing_spectra/1D"
 input_excel = "Data/Extracted_observations.xlsx"
@@ -86,7 +88,7 @@ with fits.open(fitsFile) as spec:
                 }
 
                 # Redshifts that will be checked 
-                z_min, z_max, z_step = 2, 11, 0.001
+                z_min, z_max, z_step = 2, 15, 0.001
                 redshifts = np.arange(z_min, z_max, z_step)
 
                 best_redshift = 0
@@ -204,9 +206,10 @@ with fits.open(fitsFile) as spec:
                             plt.text(observed_wavelength + 50, max(flux) * 1.05, line_name, 
                                     rotation=90, verticalalignment='bottom', fontsize=8, color='black')
                             
-                            plt.axvline(observed_wavelength_zspec, color='purple', linestyle='--', alpha=0.8, label="_nolegend_")
-                            plt.text(observed_wavelength_zspec + 50, max(flux) * 1.1, line_name + " (Spec)", 
-                                    rotation=90, verticalalignment='bottom', fontsize=8, color='blue')
+                            if (abs(best_redshift - z_spec) > 0.2):
+                                plt.axvline(observed_wavelength_zspec, color='purple', linestyle='--', alpha=0.8, label="_nolegend_")
+                                plt.text(observed_wavelength_zspec + 50, max(flux) * 1.1, line_name + " (Spec)", 
+                                        rotation=90, verticalalignment='bottom', fontsize=8, color='blue')
 
                             
                             # Display rest-frame lines
@@ -217,11 +220,18 @@ with fits.open(fitsFile) as spec:
                     plt.xlim(current_xlim[0] - (current_xlim[1] - current_xlim[0]) * 0.05, current_xlim[1])
 
                     # Add custom legend entries for redshifted and rest-frame lines
-                    custom_legend = [
-                        Line2D([0], [0], color='red', linestyle='--', label=f'Redshifted Lines (z={best_redshift:.3f})'),
-                        Line2D([0], [0], color='purple', linestyle='--', label=f'Redshifted Lines (z_spec={z_spec:.3f})'),
-                        Line2D([0], [0], color='green', linestyle='--', label='Rest-Frame Emission Lines'),
-                    ]
+                    if (abs(best_redshift - z_spec) > 0.2):
+                        custom_legend = [
+                            Line2D([0], [0], color='red', linestyle='--', label=f'Redshifted Lines (z={best_redshift:.3f})'),
+                            Line2D([0], [0], color='purple', linestyle='--', label=f'Redshifted Lines (z_spec={z_spec:.3f})'),
+                            Line2D([0], [0], color='green', linestyle='--', label='Rest-Frame Emission Lines'),
+                        ]
+                    else:
+                        custom_legend = [
+                            Line2D([0], [0], color='red', linestyle='--', label=f'Redshifted Lines (z={best_redshift:.3f})'),
+                            Line2D([0], [0], color='green', linestyle='--', label='Rest-Frame Emission Lines'),
+                        ]
+                    
                     plt.legend(handles=custom_legend + plt.gca().get_legend_handles_labels()[0],
                             title=f'Redshift: {best_redshift:.3f}', title_fontproperties={'weight': 'bold'})
                     
