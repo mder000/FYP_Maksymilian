@@ -30,7 +30,7 @@ import re
 #fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumjwst-00055757_clear-prism_v1.0_x1d.fits" # z = 9.746
 #fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00002389_clear-prism_v1.0_x1d.fits" # z = 7.043
 
-fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00000604_clear-prism_v1.0_x1d.fits"
+fitsFile = "Testing_spectra/1D/hlsp_jades_jwst_nirspec_goods-n-mediumhst-00000607_clear-prism_v1.0_x1d.fits"
 
 observationsFolder = "Testing_spectra/1D"
 input_excel = "Data/Extracted_observations.xlsx"
@@ -188,7 +188,7 @@ with fits.open(fitsFile) as spec:
                     plt.scatter(wavelength_angstrom[peaks], flux[peaks], color='blue', label="Detected Peaks")
                     plt.xlabel('Wavelength (Å)', fontsize=14)
                     plt.ylabel('Flux (erg/s/cm$^{2}$/Å)', fontsize=14)
-                    plt.title('1D Spectrum', fontsize=16)
+                    plt.title(f'1D Spectrum for Observation {tier}-{obs_id} with Observed Emission Lines', fontsize=16)
 
                     # Make the grid higher, to show the emssion lines above the plot
                     current_ylim = plt.ylim()
