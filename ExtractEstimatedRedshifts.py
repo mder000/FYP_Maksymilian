@@ -3,29 +3,24 @@ import numpy as np
 import pandas as pd
 import os
 
-fitsFile = "Testing_spectra/jades_dr3_prism_public_gn_v1.1.fits"
-#fitsFile = "Testing_spectra/jades_dr3_prism_public_gs_v1.1.fits"
-output_excel = "Data/Extracted_observations_FlagA.xlsx"
+#Result of this is provided in Example_Data
+fitsFile = "Spectra/jades_dr3_prism_public_gn_v1.1.fits"
+#fitsFile = "Spectra/jades_dr3_prism_public_gs_v1.1.fits"
+output_excel = "Example_Data/Extracted_observations_FlagA.xlsx"
 
 with fits.open(fitsFile) as spec:
     spec.info()
-    
-    # View the headers in the file
-    # for i, hdu in enumerate(spec):
-    #     print(f"\nHeader of extension {i}:")
-    #     print(hdu.header)
 
     # View the columns
     data = spec[1].data
-    # columns = data.columns
-    # print(columns)
     
     # Print all column names and corresponding values for the chosen observation
-    # first_observation = data[1]  
-    # print("First Observation Details:")
-    # print("=" * 50)
-    # for col_name in data.columns.names:
-    #     print(f"{col_name}: {first_observation[col_name]}")
+    first_observation = data[1]  
+    print("First Observation Details:")
+    print("=" * 50)
+    for col_name in data.columns.names:
+        print(f"{col_name}: {first_observation[col_name]}")
+    print(len(data.columns))
     
     # Save observations to excel
     nir_id = data['NIRSpec_ID']
@@ -35,7 +30,7 @@ with fits.open(fitsFile) as spec:
     
     nir_id_str = [str(id).zfill(8) for id in nir_id]
 
-    # Create a pandas DataFrame
+    # # Create a pandas DataFrame
     df = pd.DataFrame({
         'NIRSpec_ID': nir_id_str,
         'TIER': tier,
