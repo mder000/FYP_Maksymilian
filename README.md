@@ -10,17 +10,17 @@ https://jades-survey.github.io/scientists/data.html
 
 From this webpage, download "1-d and 2-d NIRSpec/MSA clear/prism spectra". The relevant filenames follow this structure:
 
-hlsp_jades_jwst_nirspec_<id-no>.<disperser-filter>.<version>_<extraction-type>.fits
+hlsp_jades_jwst_nirspec_id-no.disperser-filter.version_extraction-type.fits
 
 Where:
 
-<id-no> = TIER + NIRSpec_ID (zero-padded to 8 digits, e.g., goods-n-mediumhst-00000604)
+id-no = TIER + NIRSpec_ID (zero-padded to 8 digits, e.g., goods-n-mediumhst-00000604)
 
-<disperser-filter> = "clear-prism"
+disperser-filter = "clear-prism"
 
-<version> = version number, e.g., "v1.0"
+version = version number, e.g., "v1.0"
 
-<extraction-type> = "x1d" for 1D spectra (only these are used)
+extraction-type = "x1d" for 1D spectra (only these are used)
 
 After downloading, place only the x1d FITS files in the following directory:
 
@@ -32,21 +32,21 @@ Once the files are in place, all subsequent scripts can be executed as they rely
 
 # RedshiftEstimationInteractive.py
 
-    - Provides an interactive redshift estimation interface.
+- Provides an interactive redshift estimation interface.
 
-    - The user must edit the script and manually set the "fitsFile" variable at the top of the script to the path of a selected FITS file from Spectra/1D/.
+- The user must edit the script and manually set the "fitsFile" variable at the top of the script to the path of a selected FITS file from Spectra/1D/.
 
 # RedshiftEstimationBatch.py
 
-    - Performs redshift estimation on all spectra in Spectra/1D.
+- Performs redshift estimation on all spectra in Spectra/1D.
 
-    - Computes additional parameters such as SNR.
+- Computes additional parameters such as SNR.
 
-    - Saves the results in the Results/ directory as an Excel spreadsheet.
+- Saves the results in the Results/ directory as an Excel spreadsheet.
 
 # ExtractEstimatedRedshifts.py
 
-    - Generates the Example_Data/Extracted_observations.xlsx metadata file.
+- Generates the Example_Data/Extracted_observations.xlsx metadata file.
 
 Must be run twice by the user:
 a) Once for: Spectra/jades_dr3_prism_public_gn_v1.1.fits
@@ -56,27 +56,19 @@ This step is optional if the Excel file is already provided.
 
 # RegressionEstimation.py
 
-    - Trains a machine learning model for redshift estimation using provided data.
+- Trains a machine learning model for redshift estimation using provided data.
 
-    - Outputs a trained model named "redshift_estimator_model.keras".
+- Outputs a trained model named "redshift_estimator_model.keras".
 
 # redshift_estimator_model.keras
 
-    - Pre-trained model already included in the repository for inference use.
-
-    - RegressionEstimationTesting.py
-
-    - Uses the trained model to estimate redshifts on a subset of spectra from Spectra/1D.
-
-    - Results are saved to Results/Redshift_predictions.xlsx.
+- Pre-trained model already included in the repository for inference use.
 
 # RegressionEstimationTesting.py
 
-    - Uses the pre-trained or newly trained model (redshift_estimator_model.keras) to estimate redshifts on a subset of observations from Spectra/1D/.
+- Uses the trained model to estimate redshifts on a subset of spectra from Spectra/1D.
 
-    - The script performs inference using the machine learning model and evaluates its performance.
-
-    - Estimated redshifts are saved in the output file Results/Redshift_predictions.xlsx.
+- Results are saved to Results/Redshift_predictions.xlsx.
 
 ## Directory Structure:
 
